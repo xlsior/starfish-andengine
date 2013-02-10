@@ -8,6 +8,7 @@ import org.andengine.engine.options.EngineOptions;
 import org.andengine.engine.options.ScreenOrientation;
 import org.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
 import org.andengine.entity.primitive.Rectangle;
+import org.andengine.entity.scene.IOnSceneTouchListener;
 import org.andengine.entity.scene.Scene;
 import org.andengine.entity.scene.background.SpriteBackground;
 import org.andengine.entity.sprite.AnimatedSprite;
@@ -17,8 +18,10 @@ import org.andengine.extension.physics.box2d.PhysicsConnector;
 import org.andengine.extension.physics.box2d.PhysicsFactory;
 import org.andengine.extension.physics.box2d.PhysicsWorld;
 import org.andengine.extension.physics.box2d.util.Vector2Pool;
+import org.andengine.extension.physics.box2d.util.constants.PhysicsConstants;
 import org.andengine.input.sensor.acceleration.AccelerationData;
 import org.andengine.input.sensor.acceleration.IAccelerationListener;
+import org.andengine.input.touch.TouchEvent;
 import org.andengine.opengl.texture.ITexture;
 import org.andengine.opengl.texture.TextureOptions;
 import org.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlas;
@@ -40,8 +43,9 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.view.MotionEvent;
 
-public class StarfishActivity extends SimpleBaseGameActivity implements IAccelerationListener {
+public class StarfishActivity extends SimpleBaseGameActivity implements IAccelerationListener, IOnSceneTouchListener {
 	
 	private static final int CAMERA_WIDTH = 800;
 	private static final int CAMERA_HEIGHT = 480;
@@ -56,6 +60,8 @@ public class StarfishActivity extends SimpleBaseGameActivity implements IAcceler
 	
 	private Scene mScene;
 	private PhysicsWorld mPhysicsWorld;
+	private PhysicsConnector mPhysicsConnector;
+	private Body mStarfishBody;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -75,7 +81,7 @@ public class StarfishActivity extends SimpleBaseGameActivity implements IAcceler
 			ITexture backgroundTexture = new BitmapTexture(getTextureManager(), new IInputStreamOpener() {
 				@Override
 				public InputStream open() throws IOException {
-					return getAssets().open("gfx/background.jpg");
+					return getAssets().open("gfx/background.png");
 				}
 			});
 			
@@ -104,8 +110,7 @@ public class StarfishActivity extends SimpleBaseGameActivity implements IAcceler
 		this.mScene = new Scene();	
 		
 		this.mBackgroundSprite = new Sprite(0, 0, this.mBackgroundTextureRegion, getVertexBufferObjectManager());
-		SpriteBackground background = new SpriteBackground(mBackgroundSprite);
-		this.mScene.setBackground(background);
+		this.mScene.attachChild(mBackgroundSprite);
 		
 		this.mPhysicsWorld = new PhysicsWorld(new Vector2(0, SensorManager.GRAVITY_EARTH), false);
 		
@@ -131,16 +136,18 @@ public class StarfishActivity extends SimpleBaseGameActivity implements IAcceler
         this.mScene.attachChild(right);
         
         this.mScene.registerUpdateHandler(this.mPhysicsWorld);
+        this.mScene.setOnSceneTouchListener(this);
 		
-        mStarfishSprite = new AnimatedSprite(140, 80, mStarfishTextureRegion, getVertexBufferObjectManager());
-        mStarfishSprite.animate(50);
+        this.mStarfishSprite = new AnimatedSprite(140, 80, mStarfishTextureRegion, getVertexBufferObjectManager());
+        this.mStarfishSprite.animate(50);
         
-		final Body body;
-        final FixtureDef objectFixtureDef = PhysicsFactory.createFixtureDef(1, 0.0f, 0.0f);
-        body = PhysicsFactory.createBoxBody(this.mPhysicsWorld, mStarfishSprite, BodyType.DynamicBody, objectFixtureDef);
-        this.mScene.attachChild(mStarfishSprite);
 		
-        this.mPhysicsWorld.registerPhysicsConnector(new PhysicsConnector(mStarfishSprite, body, true, false));
+        final FixtureDef objectFixtureDef = PhysicsFactory.createFixtureDef(1, 0.0f, 0.0f);
+        mStarfishBody = PhysicsFactory.createBoxBody(this.mPhysicsWorld, mStarfishSprite, BodyType.DynamicBody, objectFixtureDef);
+        this.mScene.attachChild(mStarfishSprite);
+        this.mPhysicsConnector = new PhysicsConnector(mStarfishSprite, mStarfishBody, true, false);
+        this.mPhysicsWorld.registerPhysicsConnector(mPhysicsConnector);
+        
         
 		return this.mScene;
 	}
@@ -165,6 +172,15 @@ public class StarfishActivity extends SimpleBaseGameActivity implements IAcceler
 	public void onAccelerationChanged(AccelerationData pAccelerationData) {
 		final Vector2 gravity = Vector2Pool.obtain(pAccelerationData.getX(), pAccelerationData.getY());
         this.mPhysicsWorld.setGravity(gravity);
-        Vector2Pool.recycle(gravity);		
+        Vector2Pool.recycle(gravity);	
+	}
+
+	@Override
+	public boolean onSceneTouchEvent(Scene pScene, TouchEvent pSceneTouchEvent) {
+		// When screen is touched, teleport the starfish
+		if (pSceneTouchEvent.getAction() == MotionEvent.ACTION_DOWN) {
+			mStarfishBody.setTransform(new Vector2(pSceneTouchEvent.getX() / PhysicsConstants.PIXEL_TO_METER_RATIO_DEFAULT, pSceneTouchEvent.getY() / PhysicsConstants.PIXEL_TO_METER_RATIO_DEFAULT), 0);
+		}
+		return false;
 	}
 }
