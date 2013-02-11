@@ -67,11 +67,10 @@ public class StarfishActivity extends SimpleBaseGameActivity implements IAcceler
 	private ITiledTextureRegion mFishTextureRegion;
 	private ITextureRegion mBubbleWhiteTextureRegion;
 	
-	private StarfishSprite mStarfishSprite;
 	private Sprite mBackgroundSprite;
+	private StarfishSprite mStarfishSprite;
 	private AnimatedSprite mFishSprite;
 	private SpriteParticleSystem mBubblesParticleSystem;
-	
 	
 	private Scene mScene;
 	private PhysicsWorld mPhysicsWorld;
@@ -111,9 +110,10 @@ public class StarfishActivity extends SimpleBaseGameActivity implements IAcceler
 			
 			this.mStarfishBitmapTextureAtlas = new BuildableBitmapTextureAtlas(getTextureManager(), 4096, 4096, TextureOptions.BILINEAR);
 			this.mStarfishTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAssetDirectory(mStarfishBitmapTextureAtlas, getAssets(), "gfx/starfish");
-
+			
 			this.mFishBitmapTextureAtlas = new BuildableBitmapTextureAtlas(getTextureManager(), 4096, 4096, TextureOptions.BILINEAR);
 			this.mFishTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAssetDirectory(mFishBitmapTextureAtlas, getAssets(), "gfx/fish");
+			
 			try {
 				mStarfishBitmapTextureAtlas.build(new BlackPawnTextureAtlasBuilder<IBitmapTextureAtlasSource, BitmapTextureAtlas>(0, 0, 0));
 			} catch (TextureAtlasBuilderException e) {
@@ -163,31 +163,18 @@ public class StarfishActivity extends SimpleBaseGameActivity implements IAcceler
 		return this.mScene;
 	}
 	
-	 private void initFish() {
-		// Set up fish
-		this.mFishSprite = new AnimatedSprite(140, 80, mFishTextureRegion, getVertexBufferObjectManager());
-		this.mFishSprite.setScale(0.20f);
-		this.mFishSprite.animate(50);
-		this.mFishSprite.setFlippedHorizontal(true);
-		
-		final PhysicsHandler fishPhysicsHandler = new PhysicsHandler(mFishSprite);
-		mFishSprite.registerUpdateHandler(fishPhysicsHandler);
-		fishPhysicsHandler.setVelocity(80, 0);		
+	private void initEngine() {
+		this.mEngine.registerUpdateHandler(new FPSLogger());
+		if (MultiTouch.isSupported(this)) {
+			this.mEngine.setTouchController(new MultiTouchController());
+		}
 	}
-
-	private void initStarfish() {
-		// Set up animated Starfish sprite
-        this.mStarfishSprite = new StarfishSprite(140, 80, mStarfishTextureRegion, getVertexBufferObjectManager());
-        this.mStarfishSprite.setScale(0.5f);
-        this.setStarfishToAnimateNormal();
-        
-        final FixtureDef starfishFixtureDef = PhysicsFactory.createFixtureDef(1, 0.0f, 0.0f);
-        this.mStarfishBody = PhysicsFactory.createBoxBody(mPhysicsWorld, mStarfishSprite, BodyType.DynamicBody, starfishFixtureDef);
-        
-        this.mPhysicsConnector = new PhysicsConnector(mStarfishSprite, mStarfishBody, true, false);
-        this.mPhysicsWorld.registerPhysicsConnector(mPhysicsConnector);
-	 }
-
+	
+	private void initBackground() {
+		// Set up background sprite
+		this.mBackgroundSprite = new Sprite(0, 0, this.mBackgroundTextureRegion, getVertexBufferObjectManager());
+	}
+	
 	private void initWalls() {
 		// Set up transparent walls
 		final Rectangle ground = new Rectangle(0, CAMERA_HEIGHT - 1, CAMERA_WIDTH, 1, getVertexBufferObjectManager());
@@ -211,18 +198,19 @@ public class StarfishActivity extends SimpleBaseGameActivity implements IAcceler
         this.mScene.attachChild(right);
 	}
 
-	private void initBackground() {
-		// Set up background sprite
-		this.mBackgroundSprite = new Sprite(0, 0, this.mBackgroundTextureRegion, getVertexBufferObjectManager());
-	}
-
-	private void initEngine() {
-		this.mEngine.registerUpdateHandler(new FPSLogger());
-		if (MultiTouch.isSupported(this)) {
-			this.mEngine.setTouchController(new MultiTouchController());
-		}
-	}
-
+	private void initStarfish() {
+		// Set up animated Starfish sprite
+        this.mStarfishSprite = new StarfishSprite(140, 80, mStarfishTextureRegion, getVertexBufferObjectManager());
+        this.mStarfishSprite.setScale(0.5f);
+        this.setStarfishToAnimateNormal();
+        
+        final FixtureDef starfishFixtureDef = PhysicsFactory.createFixtureDef(1, 0.0f, 0.0f);
+        this.mStarfishBody = PhysicsFactory.createBoxBody(mPhysicsWorld, mStarfishSprite, BodyType.DynamicBody, starfishFixtureDef);
+        
+        this.mPhysicsConnector = new PhysicsConnector(mStarfishSprite, mStarfishBody, true, false);
+        this.mPhysicsWorld.registerPhysicsConnector(mPhysicsConnector);
+	 }
+	
 	private void initBubbles() {
 		// Set up bubbles
         final CircleParticleEmitter particleEmitter = new CircleParticleEmitter(0, 0, 30);
@@ -234,6 +222,18 @@ public class StarfishActivity extends SimpleBaseGameActivity implements IAcceler
         mBubblesParticleSystem.addParticleInitializer(new ExpireParticleInitializer<Sprite>(11.5f));
         mBubblesParticleSystem.setParticlesSpawnEnabled(false);
         this.mStarfishSprite.attachParticleSystem(mBubblesParticleSystem);		
+	}
+
+	
+	 private void initFish() {
+		// Set up fish
+		this.mFishSprite = new AnimatedSprite(-20, 10, mFishTextureRegion, getVertexBufferObjectManager());
+		this.mFishSprite.setScale(0.5f);
+		this.mFishSprite.animate(50);
+		
+		final PhysicsHandler fishPhysicsHandler = new PhysicsHandler(mFishSprite);
+		this.mFishSprite.registerUpdateHandler(fishPhysicsHandler);
+		fishPhysicsHandler.setVelocity(40, 0);
 	}
 
 	@Override
