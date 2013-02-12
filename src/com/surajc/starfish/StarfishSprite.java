@@ -20,12 +20,13 @@ public class StarfishSprite extends AnimatedSprite {
 	protected void onManagedUpdate(float pSecondsElapsed) {
 		super.onManagedUpdate(pSecondsElapsed);
 		
-		if (mBubblesParticleSystem != null) {
+		// Update position of Bubbles particle emitter to the center of the Starfish
+		if (this.mBubblesParticleSystem != null) {
 			((CircleParticleEmitter) mBubblesParticleSystem.getParticleEmitter()).setCenter(this.getX(), this.getY());
 		}
 		
 	}
-
+	
 	public void attachParticleSystem(SpriteParticleSystem pParticleSystem) {
 		this.mBubblesParticleSystem = pParticleSystem;
 	}
