@@ -26,10 +26,7 @@ import org.andengine.entity.util.FPSLogger;
 import org.andengine.extension.physics.box2d.PhysicsConnector;
 import org.andengine.extension.physics.box2d.PhysicsFactory;
 import org.andengine.extension.physics.box2d.PhysicsWorld;
-import org.andengine.extension.physics.box2d.util.Vector2Pool;
 import org.andengine.extension.physics.box2d.util.constants.PhysicsConstants;
-import org.andengine.input.sensor.acceleration.AccelerationData;
-import org.andengine.input.sensor.acceleration.IAccelerationListener;
 import org.andengine.input.touch.TouchEvent;
 import org.andengine.input.touch.controller.MultiTouch;
 import org.andengine.input.touch.controller.MultiTouchController;
@@ -48,7 +45,6 @@ import org.andengine.opengl.texture.region.TextureRegionFactory;
 import org.andengine.ui.activity.SimpleBaseGameActivity;
 import org.andengine.util.adt.io.in.IInputStreamOpener;
 
-import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.view.MotionEvent;
 
@@ -199,6 +195,7 @@ public class StarfishActivity extends SimpleBaseGameActivity implements IOnScene
 			
 			@Override
 			public void onUpdate(float pSecondsElapsed) {
+				// if fish collides with rod
 				if (mFishSprite.collidesWith(mRodSprite)) {
 					setFishToAnimateDead(mFishSprite);
 					fishCaptured(fishPhysicsHandler, rodPhysicsHandler);
